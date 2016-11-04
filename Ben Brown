@@ -1,0 +1,445 @@
+import javax.swing.*;
+import java.awt.*;
+
+public class gui 
+{
+
+    private JFrame f;
+    private JPanel p1, p2;
+    private JButton newB, quitB, b[];
+    private boolean isXturn, isGameFinished, isAITurn;
+    private int numberOfBoxesLeft, playerMode;
+    // myAction is another class which defines the behavior
+    // of the buttons when clicked
+    private myAction action;
+
+    //Construct the gui class and instantiates.
+    public gui() 
+    {
+        //Title for game
+        f = new JFrame("Tic-Tac-Toe");
+
+        p1 = new JPanel();
+        p2 = new JPanel();
+
+        // defines the names of the buttons
+        newB = new JButton("New");
+        quitB = new JButton("Quit");
+
+        // instantiates 10 buttons within the array b[]
+        b = new JButton[10];
+        for (int i = 0; i < 10; i++) 
+        {
+            // these buttons will be marked as X or O during play
+            // hence, their names are left blank using ""
+            b[i] = new JButton("");
+        }
+
+        // by default, X is first to play
+        isXturn = true;
+        isGameFinished = false;
+        numberOfBoxesLeft = 9;
+    }
+
+    public void launchFrame() 
+    {
+
+        // instantiate the actions for the buttons, etc.
+        action = new myAction(this);
+
+        // layout, defining how the GUI should appear
+        f.setLayout(new BorderLayout());
+        f.add(p1, BorderLayout.CENTER);
+        f.add(p2, BorderLayout.SOUTH);
+
+        // defining 3 row, 3 column layout of buttons
+        p1.setLayout(new GridLayout(3, 3));
+        for (int i = 1; i < 10; i++) 
+        {
+            p1.add(b[i]);
+            // adding action to the buttons
+            b[i].addActionListener(action);
+            // buttons are disabled first, will need to select game mode
+            b[i].setEnabled(false);
+        }
+
+        // Panels for new game, quit game and status.
+        p2.setLayout(new FlowLayout());
+        p2.add(newB);
+        p2.add(b[0]);
+        p2.add(quitB);
+
+        //Sets up a button that can't be clicked but is used to show who's turn it is.
+        b[0].setText("X Turn");
+        b[0].setEnabled(false);
+
+        //Sets window size.
+        f.setSize(280, 350);
+        f.setVisible(true);
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // adding action to new and quit buttons
+        newB.addActionListener(action);
+        quitB.addActionListener(action);
+    }
+
+    // the following are methods to get values of the variables above
+    // when using them outside this class
+    public JButton getButton(int i) 
+    {
+        return b[i];
+    }
+
+    public JButton[] getButtonA() 
+    {
+        return b;
+    }
+
+    public boolean getXTurn() 
+    {
+        return isXturn;
+    }
+
+    public void setXTurn(boolean i) 
+    {
+        isXturn = i;
+    }
+
+    public boolean getComplete() 
+    {
+        return isGameFinished;
+    }
+
+    public void setComplete(boolean i) 
+    {
+        isGameFinished = i;
+    }
+
+    public int getLeftBoxes() 
+    {
+        return numberOfBoxesLeft;
+    }
+
+    public void setLeftBoxes(int i) 
+    {
+        numberOfBoxesLeft = i;
+    }
+
+    public void reduceLeftBoxes() 
+    {
+        numberOfBoxesLeft--;
+    }
+
+    public int getPlayerMode() 
+    {
+        return playerMode;
+    }
+
+    public void setPlayerMode(int i) 
+    {
+        playerMode = i;
+    }
+
+    public boolean getIsAITurn() 
+    {
+        return isAITurn;
+    }
+
+    public void setIsAITurn(boolean turn) 
+    {
+        isAITurn = turn;
+    }
+}
+
+//************************************************** SEPARATING CODE **********************************************************
+
+import java.awt.event.*;
+
+public class myAction implements ActionListener 
+{
+    // this class defines the behavior of the buttons made in
+    // the gui class, hence, the latter class must be declared
+    // in order to gain access to those buttons
+    private gui myGUI;
+
+    public myAction(gui getLogGUI) 
+    {
+        // intantiates myGUI with the values of gui
+        myGUI = getLogGUI;
+    }
+
+    public void actionPerformed(ActionEvent e) 
+    {
+
+        result a = new result(myGUI.getComplete(), myGUI.getButtonA());
+        pcMove b = new pcMove();
+
+        // action for quit button
+        if (e.getActionCommand() == "Quit") 
+        {
+            System.exit(0);
+
+            // action for new button
+        } 
+        else if (e.getActionCommand() == "New") 
+        {
+            // selecting player mode
+            myGUI.setPlayerMode(a.selectMode());
+            // does nothing if cancel is chosen
+            // in selecting modes
+            if (myGUI.getPlayerMode() < 2) 
+            {
+                for (int i = 1; i < 10; i++) 
+                {
+                    myGUI.getButton(i).setText("");
+                    myGUI.getButton(i).setEnabled(true);
+
+                }
+                myGUI.setComplete(false);
+                myGUI.setLeftBoxes(9);
+                // playerMode 0 is playing against AI
+                if (myGUI.getPlayerMode() == 0)
+                {
+                    myGUI.setIsAITurn(b.ifCPUMovesFirst());
+
+                    // if true, AI selects first cell
+                    if (myGUI.getIsAITurn()) 
+                    {
+                        int m = b.moveAI();
+                        // computer is always O, player is X
+                        myGUI.getButton(m).setText("O");
+                        myGUI.getButton(m).setEnabled(false);
+                        myGUI.reduceLeftBoxes();
+
+                    }
+                }
+            }
+        } 
+        else 
+        {
+            myGUI.reduceLeftBoxes(); // if one cell is clicked, then one less
+            // remaining un-clicked cells
+
+            if (myGUI.getPlayerMode() == 0) 
+            { 	
+            	// 1 player mode
+                for (int i = 1; i < 10; i++) 
+                { 	
+                	// player's move
+                    if (e.getSource().equals(myGUI.getButton(i))) 
+                    {
+                        myGUI.getButton(i).setText("X");
+                        myGUI.getButton(i).setEnabled(false);
+                        myGUI.setXTurn(false);
+                    }
+                }
+                myGUI.setComplete(a.preWin()); // AI won't move when player
+                                                // wins even if some cells are
+                                                // still available
+                // AI response
+                if (myGUI.getLeftBoxes() != 0 && myGUI.getComplete() == false)
+                {
+                    int m;
+                    for (;;) 
+                    {
+                        m = b.moveAI();
+                        if (myGUI.getButton(m).getText().equals(""))
+                        {
+                            break;
+                        }
+                    }
+                    myGUI.getButton(m).setText("O");
+                    myGUI.getButton(m).setEnabled(false);
+                    myGUI.reduceLeftBoxes();
+                }
+
+            } 
+            else if (myGUI.getPlayerMode() == 1)
+            { 
+                for (int i = 1; i < 10; i++) 
+                {
+
+                    if (e.getSource().equals(myGUI.getButton(i)))
+                    {
+                        if (myGUI.getXTurn()) 
+                        {
+                            myGUI.getButton(i).setText("X");
+                            myGUI.getButton(i).setEnabled(false);
+                            myGUI.getButton(0).setText("O Turn");
+                            myGUI.setXTurn(false);
+                        } else if (myGUI.getXTurn() == false) 
+                        {
+                            myGUI.getButton(i).setText("O");
+                            myGUI.getButton(i).setEnabled(false);
+                            myGUI.setXTurn(true);
+                            myGUI.getButton(0).setText("X Turn");
+                        }
+                    }
+                }
+            }
+            //Checks if someone won.
+            myGUI.setComplete(a.preWin());
+            //Sets game to draw if no boxes are left.
+            if (myGUI.getLeftBoxes() == 0 && myGUI.getComplete() == false) 
+            { 
+                a.declareDraw();
+            }
+        }
+
+    }
+
+}
+
+//***************************************************************** SEPARATING CODE ****************************
+
+import javax.swing.*;
+
+public class pcMove 
+{
+    private boolean cpuMovesFirst;
+
+    // the AI behavior is merely a random selection of a cell/box to mark
+    public int moveAI() 
+    {
+        int a;
+        for (;;)
+        {
+            a = (int) (Math.random() * 10);
+            if (a > 0 && a < 10) 
+            {
+                break;
+            }
+        }
+        return a;
+    }
+
+    // called when the AI is the first to move.
+    // this is just the same as the method above
+    public boolean ifCPUMovesFirst() 
+    {
+        int a = (int) (Math.random() * 10);
+        if (a % 2 == 0) {
+            cpuMovesFirst = true;
+        }
+        else
+        {
+            cpuMovesFirst = false;
+        }
+        return cpuMovesFirst;
+    }
+}
+
+
+//**************************************************SEPARATING CODE ******************************************************
+
+import javax.swing.*;
+
+// this class contains the check if the game is over
+public class result 
+{
+    private boolean resultGameFinished;
+    private JButton resultB[];
+
+    public result(boolean getIsGameFinished, JButton getB[]) 
+    {
+        resultB = getB;
+        resultGameFinished = getIsGameFinished;
+    }
+
+    public boolean preWin() 
+    {
+        for (int i = 1; i <= 7; i++) 
+        {
+            if (resultGameFinished == false) 
+            {
+                if (i == 1) {
+                    // checking for diagonal win
+                    checkWin(i, i + 4, i + 8);
+                }
+                if (i <= 3) {
+                    // checking for column win
+                    checkWin(i, i + 3, i + 6);
+                }
+                if (i == 1 || i == 4 || i == 7) 
+                {
+                    // checking for row win
+                    checkWin(i, i + 1, i + 2);
+                }
+                if (i == 3) {
+                    // checking for inverse diagonal win
+                    checkWin(i, i + 2, i + 4);
+                }
+            }
+        }
+        return resultGameFinished;
+    }
+
+    public void checkWin(int x, int y, int z) 
+    {
+        // checking if X wins
+        if (resultB[x].getText().equals("X")) 
+        {
+            if (resultB[y].getText().equals("X")) 
+            {
+                if (resultB[z].getText().equals("X"))
+                {
+                    declareResult("X");
+                }
+            }
+        }
+        // checking if O wins
+        if (resultB[x].getText().equals("O")) 
+        {
+            if (resultB[y].getText().equals("O")) 
+            {
+                if (resultB[z].getText().equals("O")) 
+                {
+                    declareResult("O");
+                }
+            }
+        }
+    }
+
+    public void declareResult(String i) 
+    {
+        if (resultGameFinished == false) 
+        {
+            JOptionPane.showMessageDialog(null, i + " wins!");
+            for (int j = 1; j < 10; j++) 
+            {
+                resultB[j].setEnabled(false);
+            }
+            resultGameFinished = true;
+        }
+    }
+
+    // when game is draw
+    public void declareDraw() 
+    {
+        JOptionPane.showMessageDialog(null, "Draw!");
+        resultGameFinished = true;
+    }
+
+    // mode selection: against AI, another human, or cancel
+    public int selectMode() 
+    {
+        Object[] options = { "Play with Computer", "Player with Another Human",
+                "Cancel" };
+        int n = JOptionPane.showOptionDialog(null,
+                "Please select a game mode:", "Game Mode",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.INFORMATION_MESSAGE, null, options, options[2]);
+        return n;
+    }
+}
+
+//************************************************** SEPARATING CODE *********************************************
+
+public class mainMethod
+{
+    public static void main(String[] args) 
+    {
+        gui g = new gui();
+        g.launchFrame();
+    }
+}
